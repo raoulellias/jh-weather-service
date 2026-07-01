@@ -2,26 +2,26 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"log"
+	"errors"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/raoulellias/jh-weather-service/internal/api"
 )
 
 const serverAddr = ":8080"
 
 func main() {
-	logger := log.New(os.Stdout, "", log.LstdFlags)
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /weather", weatherHandler)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	server := &http.Server{
 		Addr:         serverAddr,
-		Handler:      requestLogger(logger, mux),
+		Handler:      api.NewRouter(logger),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -30,40 +30,31 @@ func main() {
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	serverErr := make(chan error, 1)
 	go func() {
-		logger.Printf("server listening on %s", serverAddr)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalf("server error: %v", err)
+		logger.Info("server listening", slog.String("addr", serverAddr))
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
 		}
 	}()
 
-	<-shutdownCtx.Done()
+	select {
+	case <-shutdownCtx.Done():
+	case err := <-serverErr:
+		logger.Error("server error", slog.Any("error", err))
+		os.Exit(1)
+	}
+
 	stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	logger.Println("shutting down server")
+	logger.Info("shutting down server")
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Fatalf("server shutdown error: %v", err)
+		logger.Error("server shutdown error", slog.Any("error", err))
+		os.Exit(1)
 	}
 
-	logger.Println("server stopped")
-}
-
-func weatherHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(w).Encode(map[string]string{"status": "not implemented"}); err != nil {
-		log.Printf("failed to write response: %v", err)
-	}
-}
-
-func requestLogger(logger *log.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(w, r)
-		logger.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
-	})
+	logger.Info("server stopped")
 }
