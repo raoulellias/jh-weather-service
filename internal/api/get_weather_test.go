@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -160,7 +161,8 @@ func TestGetWeatherSuccessReturnsForecast(t *testing.T) {
 }
 
 func TestGetWeatherServiceErrorReturns502(t *testing.T) {
-	service := &fakeForecastService{err: errors.New("upstream failed")}
+	serviceErr := errors.New("fetch forecast for coordinates: upstream failed")
+	service := &fakeForecastService{err: serviceErr}
 	router := newTestRouter(t, service)
 
 	response := performWeatherRequest(router, "/weather?lat=39.0997&lon=-94.5786")
@@ -170,6 +172,19 @@ func TestGetWeatherServiceErrorReturns502(t *testing.T) {
 	}
 	if !service.called {
 		t.Fatal("expected service to be called")
+	}
+
+	rawBody := response.Body.String()
+	if strings.Contains(rawBody, serviceErr.Error()) || strings.Contains(rawBody, "upstream failed") {
+		t.Fatalf("expected response body not to expose service error, got %s", rawBody)
+	}
+
+	var body map[string]string
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatalf("expected JSON error body: %v", err)
+	}
+	if len(body) != 1 || body["error"] != "weather service unavailable" {
+		t.Fatalf("expected public error body, got %#v", body)
 	}
 }
 

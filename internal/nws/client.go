@@ -23,6 +23,19 @@ var (
 	errUnexpectedStatus   = errors.New("unexpected NWS response status")
 )
 
+type unexpectedStatusError struct {
+	StatusCode int
+	Status     string
+}
+
+func (e *unexpectedStatusError) Error() string {
+	return fmt.Sprintf("%s: %s", errUnexpectedStatus, e.Status)
+}
+
+func (e *unexpectedStatusError) Unwrap() error {
+	return errUnexpectedStatus
+}
+
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
@@ -108,7 +121,10 @@ func (c *Client) getJSON(ctx context.Context, endpoint string, target any) error
 	defer response.Body.Close()
 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf("%w: %s", errUnexpectedStatus, response.Status)
+		return &unexpectedStatusError{
+			StatusCode: response.StatusCode,
+			Status:     response.Status,
+		}
 	}
 
 	if err := json.NewDecoder(response.Body).Decode(target); err != nil {

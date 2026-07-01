@@ -150,7 +150,7 @@ func TestServiceNoForecastPeriodsReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "contains no periods") {
+	if !errors.Is(err, errNoForecastPeriods) {
 		t.Fatalf("expected no periods error, got %v", err)
 	}
 }
@@ -168,8 +168,11 @@ func TestServiceUnsupportedTemperatureUnitReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), `unsupported temperature unit "K"`) {
+	if !errors.Is(err, errUnsupportedTemperatureUnit) {
 		t.Fatalf("expected unsupported unit error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), `"K"`) {
+		t.Fatalf("expected unsupported unit in error, got %v", err)
 	}
 }
 

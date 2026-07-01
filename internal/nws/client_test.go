@@ -2,6 +2,7 @@ package nws
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -46,8 +47,22 @@ func TestGetPointsNon2xxReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "get points") || !strings.Contains(err.Error(), "502 Bad Gateway") {
-		t.Fatalf("expected wrapped non-2xx error, got %v", err)
+	if !errors.Is(err, errUnexpectedStatus) {
+		t.Fatalf("expected unexpected status error, got %v", err)
+	}
+
+	var statusErr *unexpectedStatusError
+	if !errors.As(err, &statusErr) {
+		t.Fatalf("expected status error type, got %v", err)
+	}
+	if statusErr.StatusCode != http.StatusBadGateway {
+		t.Fatalf("expected status code %d, got %d", http.StatusBadGateway, statusErr.StatusCode)
+	}
+	if statusErr.Status != "502 Bad Gateway" {
+		t.Fatalf("expected status %q, got %q", "502 Bad Gateway", statusErr.Status)
+	}
+	if !strings.Contains(err.Error(), "get points") {
+		t.Fatalf("expected get points context, got %v", err)
 	}
 }
 
@@ -106,8 +121,22 @@ func TestGetForecastNon2xxReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "get forecast") || !strings.Contains(err.Error(), "503 Service Unavailable") {
-		t.Fatalf("expected wrapped non-2xx error, got %v", err)
+	if !errors.Is(err, errUnexpectedStatus) {
+		t.Fatalf("expected unexpected status error, got %v", err)
+	}
+
+	var statusErr *unexpectedStatusError
+	if !errors.As(err, &statusErr) {
+		t.Fatalf("expected status error type, got %v", err)
+	}
+	if statusErr.StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("expected status code %d, got %d", http.StatusServiceUnavailable, statusErr.StatusCode)
+	}
+	if statusErr.Status != "503 Service Unavailable" {
+		t.Fatalf("expected status %q, got %q", "503 Service Unavailable", statusErr.Status)
+	}
+	if !strings.Contains(err.Error(), "get forecast") {
+		t.Fatalf("expected get forecast context, got %v", err)
 	}
 }
 
@@ -190,5 +219,30 @@ func TestGetForecastForCoordinates(t *testing.T) {
 	}
 	if !reflect.DeepEqual(forecast.Properties.Periods, expectedPeriods) {
 		t.Fatalf("expected periods %#v, got %#v", expectedPeriods, forecast.Properties.Periods)
+	}
+}
+
+func TestGetForecastForCoordinatesMissingForecastURLReturnsError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/points/1.25,-2.5" {
+			t.Fatalf("expected points path, got %q", r.URL.Path)
+		}
+
+		w.Header().Set("Content-Type", acceptHeader)
+		fmt.Fprint(w, `{"properties":{}}`)
+	}))
+	t.Cleanup(server.Close)
+
+	client := NewClientWithBaseURL(server.Client(), server.URL)
+
+	_, err := client.GetForecastForCoordinates(context.Background(), 1.25, -2.5)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !errors.Is(err, errMissingForecastURL) {
+		t.Fatalf("expected missing forecast URL error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "get forecast for coordinates") || !strings.Contains(err.Error(), "get forecast") {
+		t.Fatalf("expected useful wrapping context, got %v", err)
 	}
 }

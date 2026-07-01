@@ -13,6 +13,8 @@ type NWSProvider interface {
 	GetForecastForCoordinates(ctx context.Context, latitude float64, longitude float64) (*nws.ForecastResponse, error)
 }
 
+var errNoForecastPeriods = errors.New("nws forecast response contains no periods")
+
 type Service struct {
 	provider NWSProvider
 }
@@ -34,7 +36,7 @@ func (s *Service) GetForecast(ctx context.Context, coordinates model.Coordinates
 		return nil, errors.New("nws forecast response is nil")
 	}
 	if len(forecast.Properties.Periods) == 0 {
-		return nil, errors.New("nws forecast response contains no periods")
+		return nil, errNoForecastPeriods
 	}
 
 	period := forecast.Properties.Periods[0]

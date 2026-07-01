@@ -1,6 +1,7 @@
 package weather
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -64,7 +65,10 @@ func TestCharacterizeTemperatureUnsupportedUnitReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), `unsupported temperature unit "K"`) {
+	if !errors.Is(err, errUnsupportedTemperatureUnit) {
 		t.Fatalf("expected unsupported unit error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), `"K"`) {
+		t.Fatalf("expected unsupported unit in error, got %v", err)
 	}
 }
