@@ -7,7 +7,7 @@ import (
 	"github.com/raoulellias/jh-weather-service/internal/model"
 )
 
-func ClassifyTemperature(temperature int, unit string) (model.TemperatureType, error) {
+func CharacterizeTemperature(temperature int, unit string) (model.TemperatureType, error) {
 	fahrenheit, err := toFahrenheit(temperature, unit)
 	if err != nil {
 		return "", err

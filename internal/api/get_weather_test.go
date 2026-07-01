@@ -83,6 +83,46 @@ func TestGetWeatherInvalidLonReturns400(t *testing.T) {
 	}
 }
 
+func TestGetWeatherOutOfRangeCoordinatesReturn400(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+	}{
+		{
+			name: "lat less than minimum",
+			path: "/weather?lat=-90.1&lon=-94.5786",
+		},
+		{
+			name: "lat greater than maximum",
+			path: "/weather?lat=90.1&lon=-94.5786",
+		},
+		{
+			name: "lon less than minimum",
+			path: "/weather?lat=39.0997&lon=-180.1",
+		},
+		{
+			name: "lon greater than maximum",
+			path: "/weather?lat=39.0997&lon=180.1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := &fakeForecastService{}
+			router := newTestRouter(t, service)
+
+			response := performWeatherRequest(router, tt.path)
+
+			if response.Code != http.StatusBadRequest {
+				t.Fatalf("expected status %d, got %d", http.StatusBadRequest, response.Code)
+			}
+			if service.called {
+				t.Fatal("expected service not to be called")
+			}
+		})
+	}
+}
+
 func TestGetWeatherSuccessReturnsForecast(t *testing.T) {
 	service := &fakeForecastService{
 		forecast: &model.Forecast{

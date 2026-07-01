@@ -7,7 +7,7 @@ import (
 	"github.com/raoulellias/jh-weather-service/internal/model"
 )
 
-func TestClassifyTemperatureThresholds(t *testing.T) {
+func TestCharacterizeTemperatureThresholds(t *testing.T) {
 	tests := []struct {
 		name        string
 		temperature int
@@ -48,9 +48,9 @@ func TestClassifyTemperatureThresholds(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ClassifyTemperature(tt.temperature, tt.unit)
+			got, err := CharacterizeTemperature(tt.temperature, tt.unit)
 			if err != nil {
-				t.Fatalf("ClassifyTemperature returned error: %v", err)
+				t.Fatalf("CharacterizeTemperature returned error: %v", err)
 			}
 			if got != tt.want {
 				t.Fatalf("expected %q, got %q", tt.want, got)
@@ -59,8 +59,8 @@ func TestClassifyTemperatureThresholds(t *testing.T) {
 	}
 }
 
-func TestClassifyTemperatureUnsupportedUnitReturnsError(t *testing.T) {
-	_, err := ClassifyTemperature(72, "K")
+func TestCharacterizeTemperatureUnsupportedUnitReturnsError(t *testing.T) {
+	_, err := CharacterizeTemperature(72, "K")
 	if err == nil {
 		t.Fatal("expected error")
 	}

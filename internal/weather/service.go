@@ -38,7 +38,14 @@ func (s *Service) GetForecast(ctx context.Context, coordinates model.Coordinates
 	}
 
 	period := forecast.Properties.Periods[0]
-	temperatureType, err := ClassifyTemperature(period.Temperature, period.TemperatureUnit)
+	for _, candidate := range forecast.Properties.Periods {
+		if candidate.Name == "Today" {
+			period = candidate
+			break
+		}
+	}
+
+	temperatureType, err := CharacterizeTemperature(period.Temperature, period.TemperatureUnit)
 	if err != nil {
 		return nil, fmt.Errorf("classify temperature: %w", err)
 	}

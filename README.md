@@ -41,4 +41,6 @@ Successful responses use this shape:
 
 The service currently uses the first forecast period returned by NWS as the relevant forecast period. This is intentional for the assignment scope.
 
+No config files are used in this exercise version; runtime configuration is intentionally minimal for the assignment scope.
+
 A production version would choose the period more carefully based on current time, location timezone, and forecast period metadata.

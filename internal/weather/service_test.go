@@ -19,15 +19,47 @@ func (f fakeNWSProvider) GetForecastForCoordinates(ctx context.Context, latitude
 	return f.forecast, f.err
 }
 
-func TestServiceUsesFirstForecastPeriodShortForecast(t *testing.T) {
+func TestServiceUsesForecastPeriodNamedTodayWhenPresent(t *testing.T) {
 	service := NewService(fakeNWSProvider{
 		forecast: forecastResponse(
 			nws.ForecastPeriod{
+				Name:            "Tonight",
+				ShortForecast:   "Mostly Clear",
+				Temperature:     42,
+				TemperatureUnit: "F",
+			},
+			nws.ForecastPeriod{
+				Name:            "Today",
 				ShortForecast:   "Partly Cloudy",
 				Temperature:     72,
 				TemperatureUnit: "F",
 			},
+		),
+	})
+
+	forecast, err := service.GetForecast(context.Background(), model.Coordinates{Latitude: 39.0997, Longitude: -94.5786})
+	if err != nil {
+		t.Fatalf("GetForecast returned error: %v", err)
+	}
+	if forecast.Forecast != "Partly Cloudy" {
+		t.Fatalf("expected Today short forecast %q, got %q", "Partly Cloudy", forecast.Forecast)
+	}
+	if forecast.TemperatureType != model.TemperatureTypeModerate {
+		t.Fatalf("expected temperature type %q, got %q", model.TemperatureTypeModerate, forecast.TemperatureType)
+	}
+}
+
+func TestServiceFallsBackToFirstForecastPeriodWhenTodayIsNotPresent(t *testing.T) {
+	service := NewService(fakeNWSProvider{
+		forecast: forecastResponse(
 			nws.ForecastPeriod{
+				Name:            "Tonight",
+				ShortForecast:   "Mostly Clear",
+				Temperature:     42,
+				TemperatureUnit: "F",
+			},
+			nws.ForecastPeriod{
+				Name:            "Tomorrow",
 				ShortForecast:   "Sunny Later",
 				Temperature:     88,
 				TemperatureUnit: "F",
@@ -39,8 +71,8 @@ func TestServiceUsesFirstForecastPeriodShortForecast(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetForecast returned error: %v", err)
 	}
-	if forecast.Forecast != "Partly Cloudy" {
-		t.Fatalf("expected first short forecast %q, got %q", "Partly Cloudy", forecast.Forecast)
+	if forecast.Forecast != "Mostly Clear" {
+		t.Fatalf("expected first short forecast %q, got %q", "Mostly Clear", forecast.Forecast)
 	}
 }
 
