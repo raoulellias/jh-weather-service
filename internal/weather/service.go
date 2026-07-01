@@ -28,7 +28,7 @@ func (s *Service) GetForecast(ctx context.Context, coordinates model.Coordinates
 
 	forecast, err := s.provider.GetForecastForCoordinates(ctx, coordinates.Latitude, coordinates.Longitude)
 	if err != nil {
-		return nil, fmt.Errorf("get forecast from nws: %w", err)
+		return nil, fmt.Errorf("fetch forecast for coordinates: %w", err)
 	}
 	if forecast == nil {
 		return nil, errors.New("nws forecast response is nil")

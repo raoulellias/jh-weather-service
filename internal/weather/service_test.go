@@ -130,7 +130,7 @@ func TestServiceTemperatureClassifications(t *testing.T) {
 	}
 }
 
-func TestServiceReturnsProviderError(t *testing.T) {
+func TestServiceWrapsProviderError(t *testing.T) {
 	providerErr := errors.New("nws unavailable")
 	service := NewService(fakeNWSProvider{err: providerErr})
 
