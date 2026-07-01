@@ -81,7 +81,7 @@ func (c *Client) GetForecastForCoordinates(ctx context.Context, latitude float64
 		return nil, fmt.Errorf("get forecast for coordinates: %w", err)
 	}
 
-	forecast, err := c.GetForecast(ctx, points.Properties.Forecast)
+	forecast, err := c.GetForecast(ctx, points.Properties.ForecastURL)
 	if err != nil {
 		return nil, fmt.Errorf("get forecast for coordinates: %w", err)
 	}

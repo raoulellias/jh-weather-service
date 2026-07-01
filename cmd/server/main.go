@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/raoulellias/jh-weather-service/internal/api"
+	"github.com/raoulellias/jh-weather-service/internal/nws"
+	"github.com/raoulellias/jh-weather-service/internal/weather"
 )
 
 const serverAddr = ":8080"
@@ -19,9 +21,15 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	nwsClient := nws.NewClient(httpClient)
+	weatherService := weather.NewService(nwsClient)
+
 	server := &http.Server{
 		Addr:         serverAddr,
-		Handler:      api.NewRouter(logger),
+		Handler:      api.NewRouter(logger, weatherService),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,

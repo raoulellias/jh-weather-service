@@ -29,8 +29,8 @@ func TestGetPointsSuccess(t *testing.T) {
 	}
 
 	expectedForecastURL := "https://api.weather.gov/gridpoints/TOP/32,81/forecast"
-	if points.Properties.Forecast != expectedForecastURL {
-		t.Fatalf("expected forecast URL %q, got %q", expectedForecastURL, points.Properties.Forecast)
+	if points.Properties.ForecastURL != expectedForecastURL {
+		t.Fatalf("expected forecast URL %q, got %q", expectedForecastURL, points.Properties.ForecastURL)
 	}
 }
 

@@ -19,3 +19,7 @@ coverage.out
 Thumbs.db
 .idea/
 .vscode/
+
+.agents/prompts/
+
+.agents/logs/

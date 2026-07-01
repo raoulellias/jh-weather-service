@@ -1,18 +1,18 @@
 package nws
 
 type PointsResponse struct {
-	Properties PointsProperties `json:"properties"`
+	Properties PointLinks `json:"properties"`
 }
 
-type PointsProperties struct {
-	Forecast string `json:"forecast"`
+type PointLinks struct {
+	ForecastURL string `json:"forecast"`
 }
 
 type ForecastResponse struct {
-	Properties ForecastProperties `json:"properties"`
+	Properties ForecastData `json:"properties"`
 }
 
-type ForecastProperties struct {
+type ForecastData struct {
 	Periods []ForecastPeriod `json:"periods"`
 }
 
